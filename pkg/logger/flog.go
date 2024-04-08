@@ -23,6 +23,7 @@ type logger struct {
 	baseDir  string
 	fullpath string
 	groups   map[string][]Entry
+	entries  chan Entry
 }
 
 type Entry struct {
@@ -32,7 +33,7 @@ type Entry struct {
 	Message string    `json:"message"`
 }
 
-func New(dir string) (*logger, error) {
+func New(dir string, store chan Entry) (*logger, error) {
 	rootDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, err
@@ -47,6 +48,7 @@ func New(dir string) (*logger, error) {
 		baseDir:  basedir,
 		fullpath: fullpath,
 		groups:   make(map[string][]Entry),
+		entries:  store,
 	}, err
 }
 
@@ -95,13 +97,13 @@ func (l *logger) flush() {
 	wg.Wait()
 }
 
-func (l *logger) Log(entries chan Entry, poll int) {
+func (l *logger) Log(poll int) {
 	ticker := time.NewTicker(time.Duration(poll) * time.Millisecond)
 	for {
 		select {
 		case <-ticker.C:
 			l.flush()
-		case entry := <-entries:
+		case entry := <-l.entries:
 			l.groups[entry.Group] = append(l.groups[entry.Group], entry)
 		}
 	}

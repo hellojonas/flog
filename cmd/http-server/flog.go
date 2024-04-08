@@ -29,18 +29,16 @@ func main() {
 		logDir = &p
 	}
 
-	lggr, err := logger.New(*logDir)
+	lggr, err := logger.New(*logDir, store)
 
 	if err != nil {
 		panic(err)
 	}
 
-	go lggr.Log(store, *poll)
-
-	lcontroller := logger.NewController(store)
+	go lggr.Log(*poll)
 	server := http.NewServeMux()
 
-	server.HandleFunc("/logs", lcontroller.LogHandler)
+	server.Handle("/logs", lggr)
 	log.Println("application listening on ", addr)
 	log.Fatal(http.ListenAndServe(addr, server))
 }

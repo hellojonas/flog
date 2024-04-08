@@ -3,7 +3,6 @@ package logger
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -25,11 +24,10 @@ func TestController(t *testing.T) {
 
 	go func() {
 		for r := range resc {
-			b, err := io.ReadAll(r.Body)
+			_, err := io.ReadAll(r.Body)
 			if err != nil {
 				errc <- err
 			}
-            fmt.Println(b)
 			wg.Done()
 			resCount++
 		}

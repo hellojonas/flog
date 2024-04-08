@@ -16,7 +16,7 @@ func NewController(entries chan Entry) controller {
 	}
 }
 
-func (c controller) LogHandler(w http.ResponseWriter, r *http.Request) {
+func (l logger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		msg, _ := json.Marshal(map[string]string{"message": err.Error()})
@@ -32,7 +32,7 @@ func (c controller) LogHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(msg)
 		return
 	}
-    // TODO: validate log entry
-	c.store <- e
+	// TODO: validate log entry
+	l.entries <- e
 	w.WriteHeader(http.StatusOK)
 }
