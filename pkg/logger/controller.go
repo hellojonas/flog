@@ -6,16 +6,6 @@ import (
 	"net/http"
 )
 
-type controller struct {
-	store chan Entry
-}
-
-func NewController(entries chan Entry) controller {
-	return controller{
-		store: entries,
-	}
-}
-
 func (l logger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
