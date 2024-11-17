@@ -48,7 +48,7 @@ func TestUnmarshalBinary(t *testing.T) {
 
 	m2 := Message{}
 
-	err = m2.UnmarshalBinnary(msg)
+	err = m2.UnmarshalBinary(msg)
 
 	if err != nil {
 		t.Fatal(err)

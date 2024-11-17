@@ -42,7 +42,7 @@ func (m *Message) MarshalBinary() ([]byte, error) {
 	return msg, nil
 }
 
-func (m *Message) UnmarshalBinnary(msg []byte) error {
+func (m *Message) UnmarshalBinary(msg []byte) error {
 	if len(msg) < HEADER_LENGTH {
 		return errors.New("Message#UnmarshalBinary error: message length is less than required header length")
 	}
