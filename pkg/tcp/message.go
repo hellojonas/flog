@@ -15,13 +15,13 @@ const (
 
 // Message [ [Version:1] [Flag:1] [Length:2] [Data] ]
 
-type Message struct {
+type TCPMessage struct {
 	// Command tells how this message should be parsed
 	Flag byte
 	Data []byte
 }
 
-func (m *Message) MarshalBinary() ([]byte, error) {
+func (m *TCPMessage) MarshalBinary() ([]byte, error) {
 	msgLen := len(m.Data) + HEADER_LENGTH
 
 	if msgLen <= HEADER_LENGTH {
@@ -42,7 +42,7 @@ func (m *Message) MarshalBinary() ([]byte, error) {
 	return msg, nil
 }
 
-func (m *Message) UnmarshalBinary(msg []byte) error {
+func (m *TCPMessage) UnmarshalBinary(msg []byte) error {
 	if len(msg) < HEADER_LENGTH {
 		return errors.New("Message#UnmarshalBinary error: message length is less than required header length")
 	}

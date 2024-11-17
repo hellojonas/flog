@@ -6,7 +6,7 @@ import (
 )
 
 func TestMarshalBinary(t *testing.T) {
-	m := Message{
+	m := TCPMessage{
 		Flag: FLAG_PART_END,
 		Data: []byte("hello!"),
 	}
@@ -35,7 +35,7 @@ func TestMarshalBinary(t *testing.T) {
 }
 
 func TestUnmarshalBinary(t *testing.T) {
-	m := Message{
+	m := TCPMessage{
 		Flag: FLAG_PART_END,
 		Data: []byte("hello!"),
 	}
@@ -46,7 +46,7 @@ func TestUnmarshalBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m2 := Message{}
+	m2 := TCPMessage{}
 
 	err = m2.UnmarshalBinary(msg)
 
