@@ -17,6 +17,7 @@ const (
 
 type TCPMessage struct {
 	// Command tells how this message should be parsed
+	App  string // TODO: Add support for this
 	Flag byte
 	Data []byte
 }

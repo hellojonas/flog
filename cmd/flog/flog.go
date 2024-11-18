@@ -15,4 +15,8 @@ func main() {
 	defer server.Close()
 
 	server.StartAccept()
+
+    if err != nil {
+        panic(err)
+    }
 }

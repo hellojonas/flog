@@ -19,6 +19,7 @@ type TCPServer struct {
 	host     string
 	port     int
 	listener net.Listener
+	Messages chan TCPMessage
 }
 
 func NewTCPServer(host string, port int) TCPServer {
@@ -53,19 +54,25 @@ func (s *TCPServer) StartAccept() error {
 	slog.Info("TCP#StartAccept: waiting for connection...")
 	for {
 		conn, err := s.listener.Accept()
-		slog.Info("TCP#StartAccept: connection established.", "addr", conn.LocalAddr())
+		slog.Info("TCP#StartAccept: connection established.", "addr", conn.RemoteAddr())
 
 		if err != nil {
-			slog.Error("TCP#StartAccept: cold not establish connection", "err", err, "addr", conn.LocalAddr())
+			slog.Error("TCP#StartAccept: cold not establish connection", "err", err, "addr", conn.RemoteAddr())
 			continue
 		}
 
-		go handleConn(conn)
+		c := TCPClient{
+			conn: conn,
+		}
+
+		go s.handleConn(&c)
 	}
 }
 
-func handleConn(conn net.Conn) {
+func (s *TCPServer) handleConn(client *TCPClient) {
+	conn := client.conn
 	data := make([]byte, 0)
+
 
 	for {
 		conn.SetDeadline(time.Time{})
@@ -77,6 +84,7 @@ func handleConn(conn net.Conn) {
 				slog.Error("StartAccept#handleConn: EOF.")
 				return
 			}
+
 			slog.Error("StartAccept#handleConn: could not read data from connection.", "err", err)
 			return
 		}
@@ -90,15 +98,16 @@ func handleConn(conn net.Conn) {
 		err = msg.UnmarshalBinary(chunk)
 
 		if err != nil {
-			slog.Error("StartAccept#handleConn: could not parse message.", slog.Any("err", err))
+			// TODO: what if ono of the parts fails to be delivered? handle here
+			// TODO: write an error to the client to signal the error and let im handle?
+			// TODO: Add more control fields on message header or use one control field with bitwise operators (start, continue, end, error)
+			slog.Error("StartAccept#handleConn: could not parse message.", "err", err)
 		}
 
 		data = append(data, msg.Data...)
 
 		if msg.Flag == FLAG_PART_END {
-			// TODO; Message is complete, now what send throth a channel? 
-			// TODO: the connection should be kept alive
-			// TODO; Set deadline to the read operation on connection
+			s.Messages <- msg
 			slog.Info("StartAccept#handleConn: message received.", "length", len(data))
 			continue
 		}
