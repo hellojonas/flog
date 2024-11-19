@@ -13,8 +13,6 @@ const (
 	MESSAGE_LENGTH = 1024
 )
 
-type ConnHandler func(net.Conn)
-
 type TCPServer struct {
 	host     string
 	port     int
@@ -61,18 +59,54 @@ func (s *TCPServer) StartAccept() error {
 			continue
 		}
 
-		c := TCPClient{
-			conn: conn,
+		c, err := s.authenticate(conn)
+
+		if err != nil {
+			slog.Error("TCP#StartAccept: cold not authenticate connection.", "err", err, "addr", conn.RemoteAddr())
+			continue
 		}
 
-		go s.handleConn(&c)
+		go s.handleConn(c)
 	}
+}
+
+func (s *TCPServer) authenticate(conn net.Conn) (*TCPClient, error) {
+	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	chunk := make([]byte, MESSAGE_LENGTH)
+	n, err := conn.Read(chunk)
+
+	if err != nil {
+		slog.Error("authenticate: could not read data from connection.", "err", err)
+		return nil, err
+	}
+
+	if n == 0 {
+		slog.Error("StartAccept#authenticate: nothing read.")
+		return nil, errors.New("authenticate: nothing read from conection")
+	}
+
+	msg := TCPMessage{}
+	err = msg.UnmarshalBinary(chunk) // json with application id and application key
+
+	// TODO: authenticate connection here
+
+	if err != nil {
+		errors.New("authenticate: could not parse message.")
+		slog.Error("StartAccept#authenticate: could not parse message.", "err", err)
+	}
+
+	c := TCPClient{
+		// TODO: add app name here
+		conn: conn,
+	}
+
+	conn.SetReadDeadline(time.Time{})
+	return &c, nil
 }
 
 func (s *TCPServer) handleConn(client *TCPClient) {
 	conn := client.conn
 	data := make([]byte, 0)
-
 
 	for {
 		conn.SetDeadline(time.Time{})
@@ -106,7 +140,7 @@ func (s *TCPServer) handleConn(client *TCPClient) {
 
 		data = append(data, msg.Data...)
 
-		if msg.Flag == FLAG_PART_END {
+		if msg.Flags == FLAG_PART_END {
 			s.Messages <- msg
 			slog.Info("StartAccept#handleConn: message received.", "length", len(data))
 			continue

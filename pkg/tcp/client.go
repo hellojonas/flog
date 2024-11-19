@@ -9,16 +9,12 @@ import (
 )
 
 type TCPClient struct {
-	host string
-	port int
+	app string // TODO: fill this when authenticating
 	conn net.Conn
 }
 
 func NewTCPClient(host string, port int) (*TCPClient, error) {
-	client := TCPClient{
-		host: host,
-		port: port,
-	}
+	client := TCPClient{}
 
 	addr := host + ":" + strconv.Itoa(port)
 	conn, err := net.Dial("tcp", addr)
@@ -53,7 +49,7 @@ func (c *TCPClient) Send(msg []byte) error {
 		}
 
 		m := TCPMessage{
-			Flag: flag,
+			Flags: flag,
 			Data: msg[start:end],
 		}
 
@@ -79,4 +75,8 @@ func (c *TCPClient) Send(msg []byte) error {
 	slog.Info("TCPClient#Send: message sent.", slog.Any("parts", parts))
 
 	return nil
+}
+
+func (c *TCPClient) App() string {
+	return c.app
 }

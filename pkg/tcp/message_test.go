@@ -7,7 +7,7 @@ import (
 
 func TestMarshalBinary(t *testing.T) {
 	m := TCPMessage{
-		Flag: FLAG_PART_END,
+		Flags: FLAG_PART_END,
 		Data: []byte("hello!"),
 	}
 
@@ -36,7 +36,7 @@ func TestMarshalBinary(t *testing.T) {
 
 func TestUnmarshalBinary(t *testing.T) {
 	m := TCPMessage{
-		Flag: FLAG_PART_END,
+		Flags: FLAG_PART_END,
 		Data: []byte("hello!"),
 	}
 
@@ -54,8 +54,8 @@ func TestUnmarshalBinary(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if m2.Flag != m.Flag {
-		t.Fatalf("expected flag: %d, actual: %d\n", m.Flag, m2.Flag)
+	if m2.Flags != m.Flags {
+		t.Fatalf("expected flag: %d, actual: %d\n", m.Flags, m2.Flags)
 	}
 
 	if len(m2.Data) != len(m.Data) {

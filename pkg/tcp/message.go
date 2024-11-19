@@ -5,21 +5,28 @@ import (
 	"errors"
 )
 
-const (
-	FLAG_PART_CONTINUE = byte(0)
-	FLAG_PART_END      = byte(1)
+type TCPMessageFlag byte
 
+const (
+	FLAG_PART_START TCPMessageFlag = 1 << iota
+	FLAG_PART_CONTINUE
+	FLAG_PART_END
+	FLAG_AUTH
+	FLAG_ERROR
+)
+
+const (
 	MESSAGE_VERSION = byte(1)
 	HEADER_LENGTH   = 4
 )
 
-// Message [ [Version:1] [Flag:1] [Length:2] [Data] ]
+// Message [ [Version:1] [Flags:1] [Length:2] [Data] ]
+// Flags {part_start, part_continue, part_end, error, auth}
 
 type TCPMessage struct {
 	// Command tells how this message should be parsed
-	App  string // TODO: Add support for this
-	Flag byte
-	Data []byte
+	Flags byte // TODO: change this to support multiple flags
+	Data  []byte
 }
 
 func (m *TCPMessage) MarshalBinary() ([]byte, error) {
@@ -31,7 +38,7 @@ func (m *TCPMessage) MarshalBinary() ([]byte, error) {
 
 	msg := make([]byte, HEADER_LENGTH)
 	msg[0] = MESSAGE_VERSION
-	msg[1] = m.Flag
+	msg[1] = m.Flags
 	binary.BigEndian.PutUint16(msg[2:], uint16(len(m.Data)))
 
 	msg = append(msg, m.Data...)
@@ -54,13 +61,13 @@ func (m *TCPMessage) UnmarshalBinary(msg []byte) error {
 		return errors.New("Message#UnmarshalBinary error: unsupported message version")
 	}
 
-	flag := msg[1]
+	flags := msg[1]
 	length := binary.BigEndian.Uint16(msg[2:])
 
 	data := make([]byte, length)
 	copy(data, msg[HEADER_LENGTH:])
 
-	m.Flag = flag
+	m.Flags = flags
 	m.Data = data
 
 	return nil
