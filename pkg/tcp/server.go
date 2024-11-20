@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -18,6 +19,10 @@ type TCPServer struct {
 	port     int
 	listener net.Listener
 	Messages chan TCPMessage
+}
+
+type TCPAuth struct {
+	key string `json:"key"`
 }
 
 func NewTCPServer(host string, port int) TCPServer {
@@ -95,9 +100,22 @@ func (s *TCPServer) authenticate(conn net.Conn) (*TCPClient, error) {
 		slog.Error("StartAccept#authenticate: could not parse message.", "err", err)
 	}
 
+	var auth TCPAuth
+	err = json.Unmarshal(msg.Data, &auth)
+
+	if err != nil {
+		slog.Error("StartAccept#authenticate: could not parse message.", "err", err)
+	}
+
+	// reoslve this fields using application parsed auth key
+	appId := "demo_app"
+	appName := "Demo app"
+
 	c := TCPClient{
 		// TODO: add app name here
-		conn: conn,
+		conn:    conn,
+		appId:   appId,
+		appName: appName,
 	}
 
 	conn.SetReadDeadline(time.Time{})

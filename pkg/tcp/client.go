@@ -9,8 +9,17 @@ import (
 )
 
 type TCPClient struct {
-	app string // TODO: fill this when authenticating
-	conn net.Conn
+	appId   string // TODO: fill this when authenticating
+	appName string // TODO: fill this when authenticating
+	conn    net.Conn
+}
+
+func (c TCPClient) AppId() string {
+	return c.appId
+}
+
+func (c TCPClient) AppName() string {
+	return c.appName
 }
 
 func NewTCPClient(host string, port int) (*TCPClient, error) {
@@ -49,8 +58,8 @@ func (c *TCPClient) Send(msg []byte) error {
 		}
 
 		m := TCPMessage{
-			Flags: flag,
-			Data: msg[start:end],
+			Flags: uint8(flag),
+			Data:  msg[start:end],
 		}
 
 		msgBytes, err := m.MarshalBinary()
@@ -75,8 +84,4 @@ func (c *TCPClient) Send(msg []byte) error {
 	slog.Info("TCPClient#Send: message sent.", slog.Any("parts", parts))
 
 	return nil
-}
-
-func (c *TCPClient) App() string {
-	return c.app
 }

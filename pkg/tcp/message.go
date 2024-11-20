@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-type TCPMessageFlag byte
+type TCPMessageFlag uint8
 
 const (
 	FLAG_PART_START TCPMessageFlag = 1 << iota
@@ -25,7 +25,7 @@ const (
 
 type TCPMessage struct {
 	// Command tells how this message should be parsed
-	Flags byte // TODO: change this to support multiple flags
+	Flags uint8 // TODO: change this to support multiple flags
 	Data  []byte
 }
 
