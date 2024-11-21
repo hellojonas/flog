@@ -9,14 +9,13 @@ type TCPMessageFlag uint8
 
 const (
 	FLAG_PART_START TCPMessageFlag = 1 << iota
-	FLAG_PART_CONTINUE
 	FLAG_PART_END
 	FLAG_AUTH
 	FLAG_ERROR
 )
 
 const (
-	MESSAGE_VERSION = byte(1)
+	MESSAGE_VERSION = uint8(1)
 	HEADER_LENGTH   = 4
 )
 
@@ -25,7 +24,7 @@ const (
 
 type TCPMessage struct {
 	// Command tells how this message should be parsed
-	Flags uint8 // TODO: change this to support multiple flags
+	Flags TCPMessageFlag // TODO: change this to support multiple flags
 	Data  []byte
 }
 
@@ -38,7 +37,7 @@ func (m *TCPMessage) MarshalBinary() ([]byte, error) {
 
 	msg := make([]byte, HEADER_LENGTH)
 	msg[0] = MESSAGE_VERSION
-	msg[1] = m.Flags
+	msg[1] = uint8(m.Flags)
 	binary.BigEndian.PutUint16(msg[2:], uint16(len(m.Data)))
 
 	msg = append(msg, m.Data...)
@@ -67,7 +66,7 @@ func (m *TCPMessage) UnmarshalBinary(msg []byte) error {
 	data := make([]byte, length)
 	copy(data, msg[HEADER_LENGTH:])
 
-	m.Flags = flags
+	m.Flags = TCPMessageFlag(flags)
 	m.Data = data
 
 	return nil

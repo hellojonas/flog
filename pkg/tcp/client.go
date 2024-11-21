@@ -38,6 +38,14 @@ func NewTCPClient(host string, port int) (*TCPClient, error) {
 }
 
 func (c *TCPClient) Send(msg []byte) error {
+	return c.sendMessage(msg, TCPMessageFlag(0))
+}
+
+func (c *TCPClient) SendError(msg []byte) error {
+	return c.sendMessage(msg, FLAG_ERROR)
+}
+
+func (c *TCPClient) sendMessage(msg []byte, flags TCPMessageFlag) error {
 	if len(msg) < HEADER_LENGTH {
 		return errors.New("TCPClient#Send error: message length is less than required header length")
 	}
@@ -50,15 +58,19 @@ func (c *TCPClient) Send(msg []byte) error {
 	for i := 0; i < parts; i++ {
 		start := dataLen * i
 		end := dataLen * (i + 1)
-		flag := FLAG_PART_CONTINUE
 
-		if i == parts-1 {
-			flag = FLAG_PART_END
-			end = start + len(msg[start:])
+		if i == 0 {
+			flags |= FLAG_PART_START
+		} else {
+			flags &^= FLAG_PART_START
+		}
+
+		if i == 0 && i == parts-1 {
+			flags = FLAG_PART_START | FLAG_PART_END
 		}
 
 		m := TCPMessage{
-			Flags: uint8(flag),
+			Flags: flags,
 			Data:  msg[start:end],
 		}
 

@@ -22,7 +22,7 @@ type TCPServer struct {
 }
 
 type TCPAuth struct {
-	key string `json:"key"`
+	Key string `json:"key"`
 }
 
 func NewTCPServer(host string, port int) TCPServer {
@@ -158,7 +158,7 @@ func (s *TCPServer) handleConn(client *TCPClient) {
 
 		data = append(data, msg.Data...)
 
-		if msg.Flags == FLAG_PART_END {
+		if msg.Flags & FLAG_PART_END != 0 {
 			s.Messages <- msg
 			slog.Info("StartAccept#handleConn: message received.", "length", len(data))
 			continue
