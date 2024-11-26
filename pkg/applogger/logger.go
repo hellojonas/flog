@@ -23,15 +23,21 @@ func filename(time.Time) string {
 
 var defaultLogger *slog.Logger
 
+// dest is the folwer in wich logs will be stored
+func New(dest string) *slog.Logger {
+	h := newAppLogHandler(dest)
+	defalutLogger := slog.New(h)
+
+	return defalutLogger
+}
+
 func Default() *slog.Logger {
 	if defaultLogger != nil {
 		return defaultLogger
 	}
 
-	h := newAppLogHandler("./logs")
-	defalutLogger := slog.New(h)
-
-	return defalutLogger
+	dest := os.Getenv("HOME") + "/.local/flog/logs"
+	return New(dest)
 }
 
 func newAppLogHandler(dest string) *AppLogHandler {
