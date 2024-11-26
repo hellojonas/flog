@@ -2,7 +2,6 @@ package applogger
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -29,14 +28,13 @@ func Default() *slog.Logger {
 		return defaultLogger
 	}
 
-	h := newAppLogHandler(".")
+	h := newAppLogHandler("./logs")
 	defalutLogger := slog.New(h)
 
 	return defalutLogger
 }
 
 func newAppLogHandler(dest string) *AppLogHandler {
-	fmt.Println("[HIT] NewAppLogHandler")
 
 	if err := os.MkdirAll(dest, fs.ModePerm); err != nil {
 		panic(err)
@@ -63,7 +61,6 @@ func newAppLogHandler(dest string) *AppLogHandler {
 }
 
 func (h *AppLogHandler) Handle(ctx context.Context, r slog.Record) error {
-	fmt.Println("[HIT] Handle")
 	filename := filename(time.Now())
 
 	if h.filename == filename {
@@ -103,7 +100,6 @@ func (h *AppLogHandler) WithGroup(name string) slog.Handler {
 }
 
 func createLogHandler(dest string, h slog.Handler) *AppLogHandler {
-	fmt.Println("[HIT] createLogHandler")
 	if err := os.MkdirAll(dest, fs.ModePerm); err != nil {
 		panic(err)
 	}
