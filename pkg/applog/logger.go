@@ -1,7 +1,8 @@
-package applogger
+package applog
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -17,31 +18,35 @@ type AppLogHandler struct {
 	handler  slog.Handler
 }
 
-func filename(time.Time) string {
-	return time.Now().Format(LOG_FILE_FORMAT) + ".log"
+type AppLogOpts struct {
+	// Dest is the folwer in wich logs will be stored
+	Dest string
 }
 
 var defaultLogger *slog.Logger
 
+func Config(opts *AppLogOpts) {
+	defaultLogger = newLogger(opts.Dest)
+}
+
 // dest is the folwer in wich logs will be stored
-func New(dest string) *slog.Logger {
+func newLogger(dest string) *slog.Logger {
 	h := newAppLogHandler(dest)
 	defalutLogger := slog.New(h)
 
 	return defalutLogger
 }
 
-func Default() *slog.Logger {
+func Logger() *slog.Logger {
 	if defaultLogger != nil {
 		return defaultLogger
 	}
 
-	dest := os.Getenv("HOME") + "/.local/flog/logs"
-	return New(dest)
+	fmt.Println("HIT!")
+	return newLogger("logs")
 }
 
 func newAppLogHandler(dest string) *AppLogHandler {
-
 	if err := os.MkdirAll(dest, fs.ModePerm); err != nil {
 		panic(err)
 	}
@@ -130,4 +135,8 @@ func createLogHandler(dest string, h slog.Handler) *AppLogHandler {
 		filename: filename,
 		handler:  h,
 	}
+}
+
+func filename(time.Time) string {
+	return time.Now().Format(LOG_FILE_FORMAT) + ".log"
 }
