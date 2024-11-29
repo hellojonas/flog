@@ -3,7 +3,6 @@ package tcp
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 )
 
 type TCPMessage struct {
@@ -46,7 +45,6 @@ func (m *TCPMessage) MarshalBinary() ([]uint8, error) {
 func (m *TCPMessage) UnmarshalBinary(data []uint8) error {
 	version := data[0]
 
-	fmt.Println(version)
 	if version != MESSAGE_VERSION {
 		return errors.New("UnmarshalBinary: unsupported message version")
 	}
