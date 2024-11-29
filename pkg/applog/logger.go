@@ -2,7 +2,6 @@ package applog
 
 import (
 	"context"
-	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -42,7 +41,6 @@ func Logger() *slog.Logger {
 		return defaultLogger
 	}
 
-	fmt.Println("HIT!")
 	return newLogger("logs")
 }
 
