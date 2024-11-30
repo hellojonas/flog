@@ -21,6 +21,7 @@ const (
 const (
 	MESSAGE_VERSION     uint8 = 1
 	MESSAGE_HEADER_SIZE       = 4
+	MESSAGE_MAX_LENGTH        = 1024
 )
 
 // Message format
