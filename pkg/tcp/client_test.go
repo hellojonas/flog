@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func TestClientSendMessage(t *testing.T) {
+func TestClientSendReadMessage(t *testing.T) {
 	server, client := net.Pipe()
 	defer func() {
 		server.Close()
@@ -35,7 +35,7 @@ func TestClientSendMessage(t *testing.T) {
 		dataC <- _data
 	}(data)
 
-	tcpClient := NewWithConnection(client)
+	tcpClient := NewTCPClient(client)
 	payloadLen := (12 * MESSAGE_MAX_LENGTH)
 	payload := bytes.Repeat([]uint8("A"), payloadLen)
 

@@ -2,17 +2,60 @@ package tcp
 
 import (
 	"errors"
+	"io"
+	"log/slog"
 	"math"
 	"net"
+	"time"
+
+	"github.com/hellojonas/flog/pkg/applog"
 )
 
 type TCPClient struct {
+	app  string
 	conn net.Conn
 }
 
-func NewWithConnection(conn net.Conn) *TCPClient {
+func NewTCPClient(conn net.Conn) *TCPClient {
 	return &TCPClient{
 		conn: conn,
+	}
+}
+
+func (c *TCPClient) App() string {
+	return c.app
+}
+
+func (c *TCPClient) Recv() ([]byte, error) {
+	var data []byte
+	logger := applog.Logger().With(slog.String("client", c.conn.RemoteAddr().String()))
+	chunk := make([]uint8, MESSAGE_MAX_LENGTH)
+
+	for {
+		c.conn.SetReadDeadline(time.Time{})
+		n, err := c.conn.Read(chunk)
+
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil, err
+			}
+			logger.Error("error reading data from connection", slog.Any("err", err))
+			continue
+		}
+
+		if n == 0 {
+			logger.Warn("read 0 bytes from connection")
+			continue
+		}
+
+		msg := TCPMessage{}
+		msg.UnmarshalBinary(chunk)
+
+		data = append(data, msg.Data...)
+
+		if msg.Flags&FLAG_MESSAGE_END != 0 {
+			return data, nil
+		}
 	}
 }
 
