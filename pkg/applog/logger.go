@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 )
@@ -30,6 +31,15 @@ func Config(opts *AppLogOpts) {
 
 // dest is the folwer in wich logs will be stored
 func newLogger(dest string) *slog.Logger {
+	if dest == "" {
+		userDir := os.Getenv("HOME")
+		if os.PathSeparator == '\\' {
+			userDir = os.Getenv("USERPROFILE")
+		}
+
+		dest = path.Join(userDir, ".flog", "logs")
+	}
+
 	h := newAppLogHandler(dest)
 	defalutLogger := slog.New(h)
 
@@ -41,7 +51,7 @@ func Logger() *slog.Logger {
 		return defaultLogger
 	}
 
-	return newLogger("logs")
+	return newLogger("")
 }
 
 func newAppLogHandler(dest string) *AppLogHandler {
