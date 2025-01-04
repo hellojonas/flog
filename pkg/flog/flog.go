@@ -14,7 +14,7 @@ func New() *flog {
 	return &flog{}
 }
 
-func (f *flog) Handle(client *tcp.TCPClient) {
+func (f *flog) Handle(client *tcp.TCPConnection) {
 	logger := applog.Logger().With(slog.String("app", client.App()))
 
 	for {

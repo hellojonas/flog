@@ -14,7 +14,7 @@ type TCPServer struct {
 }
 
 type TCPHandler interface {
-	Handle(*TCPClient)
+	Handle(*TCPConnection)
 }
 
 func NewTCPServer(addr string, handler TCPHandler) (*TCPServer, error) {
@@ -50,7 +50,7 @@ func (ts *TCPServer) StartAccept() {
 			logger.Error("error accepting connection", slog.Any("err", err), slog.String("addr", conn.RemoteAddr().String()))
 			continue
 		}
-		client := NewTCPClient(conn)
+		client := NewTCPConnection(conn)
 		go ts.handler.Handle(client)
 	}
 }

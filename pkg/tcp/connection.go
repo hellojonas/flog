@@ -11,24 +11,24 @@ import (
 	"github.com/hellojonas/flog/pkg/applog"
 )
 
-type TCPClient struct {
+type TCPConnection struct {
 	app  string
 	conn net.Conn
 }
 
-func NewTCPClient(conn net.Conn) *TCPClient {
-	return &TCPClient{
+func NewTCPConnection(conn net.Conn) *TCPConnection {
+	return &TCPConnection{
 		conn: conn,
 	}
 }
 
-func (c *TCPClient) App() string {
+func (c *TCPConnection) App() string {
 	return c.app
 }
 
-func (c *TCPClient) Recv() ([]byte, error) {
+func (c *TCPConnection) Recv() ([]byte, error) {
 	var data []byte
-	logger := applog.Logger().With(slog.String("client", c.conn.RemoteAddr().String()))
+	logger := applog.Logger().With(slog.String("connection", c.conn.RemoteAddr().String()))
 	chunk := make([]uint8, MESSAGE_MAX_LENGTH)
 
 	for {
@@ -59,11 +59,11 @@ func (c *TCPClient) Recv() ([]byte, error) {
 	}
 }
 
-func (c *TCPClient) Send(data []uint8) error {
+func (c *TCPConnection) Send(data []uint8) error {
 	return c.SendWithFlags(data, TCPMessageFlag(0))
 }
 
-func (c *TCPClient) SendWithFlags(data []uint8, flags TCPMessageFlag) error {
+func (c *TCPConnection) SendWithFlags(data []uint8, flags TCPMessageFlag) error {
 	maxPayload := MESSAGE_MAX_LENGTH - MESSAGE_HEADER_SIZE
 	parts := int(math.Ceil(float64(len(data)) / float64(maxPayload)))
 
