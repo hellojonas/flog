@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"math"
 	"net"
+	"os"
 	"time"
 
 	"github.com/hellojonas/flog/pkg/applog"
@@ -30,17 +31,17 @@ func (c *TCPConnection) App() string {
 	return c.app
 }
 
-func (c *TCPConnection) Recv() ([]byte, error) {
+func (c *TCPConnection) RecvTimeout(timout time.Time) ([]byte, error) {
 	var data []byte
 	logger := applog.Logger().With(slog.String("connection", c.conn.RemoteAddr().String()))
 	chunk := make([]uint8, MESSAGE_MAX_LENGTH)
 
 	for {
-		c.conn.SetReadDeadline(time.Time{})
+		c.conn.SetReadDeadline(timout)
 		n, err := c.conn.Read(chunk)
 
 		if err != nil {
-			if errors.Is(err, io.EOF) {
+			if errors.Is(err, io.EOF) || errors.Is(err, os.ErrDeadlineExceeded) {
 				return nil, err
 			}
 			logger.Error("error reading data from connection", slog.Any("err", err))
@@ -61,10 +62,6 @@ func (c *TCPConnection) Recv() ([]byte, error) {
 			return data, nil
 		}
 	}
-}
-
-func (c *TCPConnection) Send(data []uint8) error {
-	return c.SendWithFlags(data, TCPMessageFlag(0))
 }
 
 func (c *TCPConnection) SendWithFlags(data []uint8, flags TCPMessageFlag) error {
@@ -108,4 +105,12 @@ func (c *TCPConnection) SendWithFlags(data []uint8, flags TCPMessageFlag) error 
 	}
 
 	return nil
+}
+
+func (c *TCPConnection) Recv() ([]byte, error) {
+	return c.RecvTimeout(time.Time{})
+}
+
+func (c *TCPConnection) Send(data []uint8) error {
+	return c.SendWithFlags(data, TCPMessageFlag(0))
 }

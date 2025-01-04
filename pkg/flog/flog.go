@@ -11,11 +11,18 @@ import (
 	"github.com/hellojonas/flog/pkg/tcp"
 )
 
+const (
+	AUTH_OK      = "AUTH_OK"
+	AUTH_REQUEST = "AUTH_REQUEST"
+
+	AUTH_MESSAGE_TIMEOUT = 15
+)
+
 type flog struct {
 	appId string
 }
 
-type authInfo struct {
+type ClientCredential struct {
 	AppId  string `json:"app_id"`
 	Secret string `json:"secret"`
 }
@@ -33,7 +40,7 @@ func (f *flog) authenticate(client *tcp.TCPConnection) error {
 	}
 
 	chunk := make([]byte, tcp.MESSAGE_MAX_LENGTH)
-	conn.SetReadDeadline(time.Now().Add(15 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(AUTH_MESSAGE_TIMEOUT * time.Second))
 	n, err := conn.Read(chunk)
 
 	if err != nil {
@@ -61,8 +68,8 @@ func (f *flog) authenticate(client *tcp.TCPConnection) error {
 		return errors.New("auth info must be contained in a single message")
 	}
 
-	var ai authInfo
-	err = json.Unmarshal(authMsg.Data, &ai)
+	var cc ClientCredential
+	err = json.Unmarshal(authMsg.Data, &cc)
 
 	if err != nil {
 		return err
@@ -76,7 +83,7 @@ func (f *flog) authenticate(client *tcp.TCPConnection) error {
 		return err
 	}
 
-	f.appId = ai.AppId
+	f.appId = cc.AppId
 
 	return nil
 }
