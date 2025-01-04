@@ -22,6 +22,10 @@ func NewTCPConnection(conn net.Conn) *TCPConnection {
 	}
 }
 
+func (c *TCPConnection) Conn() net.Conn {
+	return c.conn
+}
+
 func (c *TCPConnection) App() string {
 	return c.app
 }

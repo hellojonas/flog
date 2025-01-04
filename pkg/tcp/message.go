@@ -16,6 +16,7 @@ const (
 	FLAG_MESSAGE_START TCPMessageFlag = 1 << iota
 	FLAG_MESSAGE_END
 	FLAG_MESSAGE_ERROR
+	FLAG_MESSAGE_AUTH
 )
 
 const (
