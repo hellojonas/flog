@@ -10,9 +10,9 @@ import (
 )
 
 type client struct {
-	app  string
-	conn tcp.TCPConnection
-	data chan []byte
+	app     string
+	TcpConn tcp.TCPConnection
+	data    chan []byte
 }
 
 func isAuthMsg(msg *tcp.TCPMessage) bool {
@@ -22,7 +22,7 @@ func isAuthMsg(msg *tcp.TCPMessage) bool {
 }
 
 func (c *client) authenticate(cred ClientCredential) error {
-	conn := c.conn.Conn()
+	conn := c.TcpConn.Conn()
 
 	chunk := make([]byte, tcp.MESSAGE_MAX_LENGTH)
 	conn.SetDeadline(time.Now().Add(AUTH_MESSAGE_TIMEOUT * time.Second))
@@ -62,7 +62,7 @@ func (c *client) authenticate(cred ClientCredential) error {
 		return err
 	}
 
-	err = c.conn.SendWithFlags(ccData, tcp.FLAG_MESSAGE_AUTH)
+	err = c.TcpConn.SendWithFlags(ccData, tcp.FLAG_MESSAGE_AUTH)
 
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func NewClient(addr string, cred ClientCredential) (*client, error) {
 	}
 
 	c := client{
-		conn: *tcp.NewTCPConnection(conn),
+		TcpConn: *tcp.NewTCPConnection(conn),
 	}
 
 	err = c.authenticate(cred)
