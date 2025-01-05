@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const LOG_FILE_FORMAT = "2006-02-01"
+const LOG_FILE_FORMAT = "2006-01-02"
 
 type AppLogHandler struct {
 	dest     string
