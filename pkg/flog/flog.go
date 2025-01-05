@@ -4,7 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"log/slog"
+	"os"
+	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/hellojonas/flog/pkg/applog"
@@ -15,11 +20,16 @@ const (
 	AUTH_OK      = "AUTH_OK"
 	AUTH_REQUEST = "AUTH_REQUEST"
 
-	AUTH_MESSAGE_TIMEOUT = 15
+	AUTH_MESSAGE_TIMEOUT = 5
+
+	LOG_FILE_FORMAT = "2006-01-02"
 )
 
 type flog struct {
-	appId string
+	appId   string
+	logFile string
+	logDir  string
+	output  *os.File
 }
 
 type ClientCredential struct {
@@ -99,14 +109,70 @@ func (f *flog) Handle(client *tcp.TCPConnection) {
 		return
 	}
 
+	userDir := os.Getenv("HOME")
+
+	if os.PathSeparator == '\\' {
+		userDir = os.Getenv("USERPROFILE")
+	}
+
+	dest := path.Join(userDir, ".flog", "logs", f.appId)
+
+	f.logDir = dest
+
+	if err := os.MkdirAll(dest, fs.ModePerm); err != nil {
+		logger.Error("Error creating logs directory for client", slog.Any("err", err))
+		return
+	}
+
 	for {
 		data, err := client.Recv()
 
 		if err != nil {
 			logger.Error("Error reading from client", slog.Any("err", err))
-			break
+			if errors.Is(err, io.EOF) || errors.Is(err, os.ErrDeadlineExceeded) {
+				break
+			}
+			continue
 		}
 
-		logger.Info("message received", slog.Int("len", len(data)))
+		err = f.persist(data)
+
+		if err != nil {
+			logger.Error("Error persisting data", slog.Any("err", err))
+		}
+
 	}
+}
+
+func (f *flog) persist(data []byte) error {
+	filename := logFilename(time.Now())
+
+	if filename != f.logFile {
+		f.logFile = filename
+		path := filepath.Join(f.logDir, filename)
+		out, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.ModePerm)
+
+		if err != nil {
+			return err
+		}
+
+		f.output.Close()
+		f.output = out
+	}
+
+	n, err := f.output.Write(data)
+
+	if err != nil {
+		return err
+	}
+
+	if n == 0 {
+		return errors.New("0 bytes writtern to disk")
+	}
+
+	return nil
+}
+
+func logFilename(time.Time) string {
+	return time.Now().Format(LOG_FILE_FORMAT) + ".log"
 }
