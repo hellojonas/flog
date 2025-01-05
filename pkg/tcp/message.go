@@ -6,8 +6,9 @@ import (
 )
 
 type TCPMessage struct {
-	Flags TCPMessageFlag
-	Data  []uint8
+	Flags  TCPMessageFlag
+	Length uint16
+	Data   []uint8
 }
 
 type TCPMessageFlag uint8
@@ -44,24 +45,32 @@ func (m *TCPMessage) MarshalBinary() ([]uint8, error) {
 	return data, nil
 }
 
-func (m *TCPMessage) UnmarshalBinary(data []uint8) error {
+func (m *TCPMessage) UnmarshalHeaderBinary(data []uint8) error {
 	version := data[0]
 
 	if version != MESSAGE_VERSION {
 		return errors.New("UnmarshalBinary: unsupported message version")
 	}
 
-	if len(data) <= MESSAGE_HEADER_SIZE {
+	if len(data) < MESSAGE_HEADER_SIZE {
 		return errors.New("UnmarshalBinay: invalid message length")
 	}
 
 	flags := data[1]
 	dataLen := binary.BigEndian.Uint16(data[2:])
-	d := make([]uint8, dataLen)
-
-	copy(d, data[MESSAGE_HEADER_SIZE:dataLen+MESSAGE_HEADER_SIZE])
 
 	m.Flags = TCPMessageFlag(flags)
+	m.Length = dataLen
+
+	return nil
+}
+
+func (m *TCPMessage) UnmarshalBinary(data []uint8) error {
+	m.UnmarshalHeaderBinary(data)
+	d := make([]uint8, m.Length)
+
+	copy(d, data[MESSAGE_HEADER_SIZE:m.Length+MESSAGE_HEADER_SIZE])
+
 	m.Data = d
 
 	return nil

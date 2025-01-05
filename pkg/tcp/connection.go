@@ -7,13 +7,16 @@ import (
 	"math"
 	"net"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/hellojonas/flog/pkg/applog"
 )
 
 type TCPConnection struct {
-	app  string
+	app string
+
+	mu   sync.Mutex
 	conn net.Conn
 }
 
@@ -34,11 +37,13 @@ func (c *TCPConnection) App() string {
 func (c *TCPConnection) RecvTimeout(timout time.Time) ([]byte, error) {
 	var data []byte
 	logger := applog.Logger().With(slog.String("connection", c.conn.RemoteAddr().String()))
-	chunk := make([]uint8, MESSAGE_MAX_LENGTH)
+	hChunk := make([]byte, MESSAGE_HEADER_SIZE)
 
 	for {
 		c.conn.SetReadDeadline(timout)
-		n, err := c.conn.Read(chunk)
+		c.mu.Lock()
+		n, err := c.conn.Read(hChunk)
+		c.mu.Unlock()
 
 		if err != nil {
 			if errors.Is(err, io.EOF) || errors.Is(err, os.ErrDeadlineExceeded) {
@@ -54,9 +59,31 @@ func (c *TCPConnection) RecvTimeout(timout time.Time) ([]byte, error) {
 		}
 
 		msg := TCPMessage{}
-		msg.UnmarshalBinary(chunk)
+		err = msg.UnmarshalHeaderBinary(hChunk)
+		if err != nil {
+			return nil, err
+		}
+		payload := make([]byte, msg.Length)
 
-		data = append(data, msg.Data...)
+		c.conn.SetReadDeadline(timout)
+		c.mu.Lock()
+		n, err = c.conn.Read(payload)
+		c.mu.Unlock()
+
+		if err != nil {
+			if errors.Is(err, io.EOF) || errors.Is(err, os.ErrDeadlineExceeded) {
+				return nil, err
+			}
+			logger.Error("error reading data from connection", slog.Any("err", err))
+			continue
+		}
+
+		if n == 0 {
+			logger.Warn("read 0 bytes from connection")
+			continue
+		}
+
+		data = append(data, payload...)
 
 		if msg.Flags&FLAG_MESSAGE_END != 0 {
 			return data, nil
@@ -93,7 +120,10 @@ func (c *TCPConnection) SendWithFlags(data []uint8, flags TCPMessageFlag) error 
 			return err
 		}
 
+		c.conn.SetWriteDeadline(time.Time{})
+		c.mu.Lock()
 		n, err := c.conn.Write(payLoad)
+		c.mu.Unlock()
 
 		if err != nil {
 			return errors.New("Send: " + err.Error())
