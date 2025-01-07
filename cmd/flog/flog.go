@@ -5,11 +5,10 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/hellojonas/flog/pkg/applog"
 	"github.com/hellojonas/flog/pkg/flog"
-	"github.com/hellojonas/flog/pkg/flog/flogdb"
 	"github.com/hellojonas/flog/pkg/tcp"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -22,13 +21,14 @@ func main() {
 		userDir = os.Getenv("USERPROFILE")
 	}
 
-	flogRoot := path.Join(userDir, ".flog")
+	flogRoot := filepath.Join(userDir, ".flog")
 
 	if err := os.MkdirAll(flogRoot, fs.ModePerm); err != nil {
+		logger.Error("error creating flog root dir.", slog.Any("err", err))
 		panic(err)
 	}
 
-	dbpath := "file:" + path.Join(flogRoot, "flog.db")
+	dbpath := "file:" + filepath.Join(flogRoot, "flog.db")
 
 	logger.Info("opening db...", slog.String("db", dbpath))
 	db, err := sql.Open("sqlite3", dbpath)

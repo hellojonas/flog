@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
-	"path"
 	"path/filepath"
 	"time"
 
@@ -115,7 +114,7 @@ func (f *flog) Handle(client *tcp.TCPConnection) {
 		userDir = os.Getenv("USERPROFILE")
 	}
 
-	dest := path.Join(userDir, ".flog", "logs", f.appId)
+	dest := filepath.Join(userDir, ".flog", "logs", f.appId)
 
 	f.logDir = dest
 

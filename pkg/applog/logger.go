@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
-	"path"
 	"path/filepath"
 	"time"
 )
@@ -37,7 +36,7 @@ func newLogger(dest string) *slog.Logger {
 			userDir = os.Getenv("USERPROFILE")
 		}
 
-		dest = path.Join(userDir, ".flog", "logs")
+		dest = filepath.Join(userDir, ".flog", "logs")
 	}
 
 	h := newAppLogHandler(dest)
