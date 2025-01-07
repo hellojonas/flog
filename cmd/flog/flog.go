@@ -9,6 +9,7 @@ import (
 
 	"github.com/hellojonas/flog/pkg/applog"
 	"github.com/hellojonas/flog/pkg/flog"
+	"github.com/hellojonas/flog/pkg/migration"
 	"github.com/hellojonas/flog/pkg/tcp"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -34,17 +35,25 @@ func main() {
 	db, err := sql.Open("sqlite3", dbpath)
 
 	if err != nil {
+		logger.Error("error opening database connection.", slog.Any("err", err))
 		panic(err)
 	}
 
 	defer db.Close()
 
-	flogdb.InitSchema(db)
+	migrationPath := filepath.Join("migrations")
+	err = migration.Migrate(db, migrationPath)
+
+	if err != nil {
+		logger.Error("error migrating flog database.", slog.Any("err", err))
+		panic(err)
+	}
 
 	addr := ":8008"
 	server, err := tcp.NewTCPServer(addr, flog.New())
 
 	if err != nil {
+		logger.Error("rror staring server.", slog.Any("err", err))
 		panic(err)
 	}
 
