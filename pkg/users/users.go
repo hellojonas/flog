@@ -25,17 +25,17 @@ type User struct {
 	CreatdAt time.Time `json:"createdAt"`
 }
 
-type usrServices struct {
+type userService struct {
 	db *sql.DB
 }
 
-func NewService(db *sql.DB) *usrServices {
-	return &usrServices{
+func NewService(db *sql.DB) *userService {
+	return &userService{
 		db: db,
 	}
 }
 
-func (us *usrServices) CreateUser(data UserCreateInput) error {
+func (us *userService) CreateUser(data UserCreateInput) error {
 	// TODO: create errors for users and log internal errors
 	if data.Name == "" {
 		return errors.New("user name is required")
@@ -63,17 +63,17 @@ func (us *usrServices) CreateUser(data UserCreateInput) error {
 
 	password := string(_pass)
 
-	_, err = us.db.Exec("INSERT INTO users (name, email, password) VALUES (?, ?, ?);", data.Name, data.Email, password)
+	_, err = us.db.Exec("INSERT INTO users (name, email, password, inactive) VALUES (?, ?, ?, ?);", data.Name, data.Email, password, false)
 
 	return err
 }
 
-func (us *usrServices) FindById(id int64) (*User, error) {
+func (us *userService) FindById(id int64) (*User, error) {
 	row := us.db.QueryRow("SELECT name, email, password, inactive, created_at FROM users where id = ?;", id)
 	var name string
 	var email string
 	var password string
-	var inactive bool
+	var inactive sql.NullBool
 	var createdAt time.Time
 	if err := row.Scan(&name, &email, &password, &inactive, &createdAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -88,17 +88,17 @@ func (us *usrServices) FindById(id int64) (*User, error) {
 		Name:     name,
 		Email:    email,
 		Password: password,
-		Inactive: inactive,
+		Inactive: inactive.Bool,
 		CreatdAt: createdAt,
 	}, nil
 }
 
-func (us *usrServices) FindByEmail(email string) (*User, error) {
+func (us *userService) FindByEmail(email string) (*User, error) {
 	row := us.db.QueryRow("SELECT name, email, password, inactive, created_at FROM users where email = ?;", email)
 	var id int64
 	var name string
 	var password string
-	var inactive bool
+	var inactive sql.NullBool
 	var createdAt time.Time
 	if err := row.Scan(&name, &email, &password, &inactive, &createdAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -113,12 +113,12 @@ func (us *usrServices) FindByEmail(email string) (*User, error) {
 		Name:     name,
 		Email:    email,
 		Password: password,
-		Inactive: inactive,
+		Inactive: inactive.Bool,
 		CreatdAt: createdAt,
 	}, nil
 }
 
-func (us *usrServices) Exists(ids []int64) (bool, error) {
+func (us *userService) Exists(ids []int64) (bool, error) {
 	_ids := make([]any, len(ids))
 	for i, id := range ids {
 		_ids[i] = id
