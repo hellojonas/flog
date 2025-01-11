@@ -94,7 +94,7 @@ func (as *AppService) FindByName(appName string) (*App, error) {
 }
 
 func (as *AppService) CreateApp(data AppCreateInput) (*App, error) {
-	token, err := genKey(flog.APP_KEY_LEN)
+	token, err := genKey(APP_KEY_LEN)
 	name := strings.ReplaceAll(data.Name, " ", "_")
 	res, err := as.db.Exec("INSERT INTO applications (name, token, inactive, user_id) VALUES (?, ?, ?, ?) RETURNING id;", name, token, false, data.UserId)
 

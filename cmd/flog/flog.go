@@ -8,7 +8,9 @@ import (
 	"path/filepath"
 
 	"github.com/hellojonas/flog/pkg/applog"
+	"github.com/hellojonas/flog/pkg/apps"
 	"github.com/hellojonas/flog/pkg/flog"
+	"github.com/hellojonas/flog/pkg/logs"
 	"github.com/hellojonas/flog/pkg/migration"
 	"github.com/hellojonas/flog/pkg/tcp"
 	_ "github.com/mattn/go-sqlite3"
@@ -50,7 +52,9 @@ func main() {
 	}
 
 	addr := ":8008"
-	server, err := tcp.NewTCPServer(addr, flog.New(db))
+	appSvc := apps.NewService(db)
+	logSvc := logs.NewService(db)
+	server, err := tcp.NewTCPServer(addr, flog.New(appSvc, logSvc))
 
 	if err != nil {
 		logger.Error("rror staring server.", slog.Any("err", err))

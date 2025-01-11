@@ -13,8 +13,8 @@ import (
 
 	"github.com/hellojonas/flog/pkg/applog"
 	"github.com/hellojonas/flog/pkg/apps"
+	"github.com/hellojonas/flog/pkg/logs"
 	"github.com/hellojonas/flog/pkg/tcp"
-	"github.com/hellojonas/flog/pkg/users"
 )
 
 const (
@@ -27,12 +27,13 @@ const (
 )
 
 type flog struct {
-	appId   string
+	appName string
+	appId   int64
 	logFile string
 	logDir  string
 	output  *os.File
-	userSvc *users.UserService
 	appSvc  *apps.AppService
+	logSvc  *logs.LogService
 }
 
 type ClientCredential struct {
@@ -40,10 +41,10 @@ type ClientCredential struct {
 	Secret string `json:"secret"`
 }
 
-func New(userSvc *users.UserService, appSvc *apps.AppService) *flog {
+func New(appSvc *apps.AppService, logSvc *logs.LogService) *flog {
 	return &flog{
-		userSvc: userSvc,
-		appSvc:  appSvc,
+		appSvc: appSvc,
+		logSvc: logSvc,
 	}
 }
 
@@ -103,12 +104,12 @@ func (f *flog) authenticate(client *tcp.TCPConnection) error {
 
 	err = client.SendWithFlags([]byte("AUTH_OK"), tcp.FLAG_MESSAGE_AUTH)
 
-
 	if err != nil {
 		return err
 	}
 
-	f.appId = cc.AppId
+	f.appId = app.Id
+	f.appName = cc.AppId
 
 	return nil
 }
@@ -130,7 +131,7 @@ func (f *flog) Handle(client *tcp.TCPConnection) {
 		userDir = os.Getenv("USERPROFILE")
 	}
 
-	dest := filepath.Join(userDir, ".flog", "logs", f.appId)
+	dest := filepath.Join(userDir, ".flog", "logs", f.appName)
 
 	f.logDir = dest
 
@@ -173,6 +174,15 @@ func (f *flog) persist(data []byte) error {
 
 		f.output.Close()
 		f.output = out
+
+		err = f.logSvc.CreateLog(logs.LogCreateInput{
+			Name:  filename,
+			AppId: f.appId,
+		})
+
+		if err != nil {
+			return err
+		}
 	}
 
 	n, err := f.output.Write(data)
