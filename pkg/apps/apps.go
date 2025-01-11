@@ -64,7 +64,8 @@ func (as *AppService) FindById(id int64) (*App, error) {
 
 func (as *AppService) CreateApp(data AppCreateInput) (*App, error) {
 	token := "GENEREATED_TOKEN" // TODO: generate token for application
-	res, err := as.db.Exec("INSERT INTO applications (name, token, inactive, user_id) VALUES (?, ?, ?, ?) RETURNING id;", data.Name, token, false, data.UserId)
+	name := strings.ReplaceAll(data.Name, " ", "_")
+	res, err := as.db.Exec("INSERT INTO applications (name, token, inactive, user_id) VALUES (?, ?, ?, ?) RETURNING id;", name, token, false, data.UserId)
 
 	if err != nil {
 		return nil, err
