@@ -10,7 +10,7 @@ import (
 )
 
 type userRouter struct {
-	svc    *userService
+	svc    *UserService
 	appSvc *apps.AppService
 }
 
@@ -18,7 +18,7 @@ type HttpMessageResponse struct {
 	Message string `json:"message"`
 }
 
-func NewRouter(svc *userService, appSvc *apps.AppService) *userRouter {
+func NewRouter(svc *UserService, appSvc *apps.AppService) *userRouter {
 	ur := &userRouter{
 		svc:    svc,
 		appSvc: appSvc,

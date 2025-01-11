@@ -25,17 +25,17 @@ type User struct {
 	CreatdAt time.Time `json:"createdAt"`
 }
 
-type userService struct {
+type UserService struct {
 	db *sql.DB
 }
 
-func NewService(db *sql.DB) *userService {
-	return &userService{
+func NewService(db *sql.DB) *UserService {
+	return &UserService{
 		db: db,
 	}
 }
 
-func (us *userService) CreateUser(data UserCreateInput) error {
+func (us *UserService) CreateUser(data UserCreateInput) error {
 	// TODO: create errors for users and log internal errors
 	if data.Name == "" {
 		return errors.New("user name is required")
@@ -68,7 +68,7 @@ func (us *userService) CreateUser(data UserCreateInput) error {
 	return err
 }
 
-func (us *userService) FindById(id int64) (*User, error) {
+func (us *UserService) FindById(id int64) (*User, error) {
 	row := us.db.QueryRow("SELECT name, email, password, inactive, created_at FROM users where id = ?;", id)
 	var name string
 	var email string
@@ -93,7 +93,7 @@ func (us *userService) FindById(id int64) (*User, error) {
 	}, nil
 }
 
-func (us *userService) FindByEmail(email string) (*User, error) {
+func (us *UserService) FindByEmail(email string) (*User, error) {
 	row := us.db.QueryRow("SELECT name, email, password, inactive, created_at FROM users where email = ?;", email)
 	var id int64
 	var name string
@@ -118,7 +118,7 @@ func (us *userService) FindByEmail(email string) (*User, error) {
 	}, nil
 }
 
-func (us *userService) Exists(ids []int64) (bool, error) {
+func (us *UserService) Exists(ids []int64) (bool, error) {
 	_ids := make([]any, len(ids))
 	for i, id := range ids {
 		_ids[i] = id

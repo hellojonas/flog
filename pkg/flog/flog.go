@@ -12,7 +12,9 @@ import (
 	"time"
 
 	"github.com/hellojonas/flog/pkg/applog"
+	"github.com/hellojonas/flog/pkg/apps"
 	"github.com/hellojonas/flog/pkg/tcp"
+	"github.com/hellojonas/flog/pkg/users"
 )
 
 const (
@@ -29,6 +31,8 @@ type flog struct {
 	logFile string
 	logDir  string
 	output  *os.File
+	userSvc *users.UserService
+	appSvc  *apps.AppService
 }
 
 type ClientCredential struct {
@@ -36,8 +40,11 @@ type ClientCredential struct {
 	Secret string `json:"secret"`
 }
 
-func New() *flog {
-	return &flog{}
+func New(userSvc *users.UserService, appSvc *apps.AppService) *flog {
+	return &flog{
+		userSvc: userSvc,
+		appSvc:  appSvc,
+	}
 }
 
 func (f *flog) authenticate(client *tcp.TCPConnection) error {
@@ -84,9 +91,18 @@ func (f *flog) authenticate(client *tcp.TCPConnection) error {
 		return err
 	}
 
-	// TODO: validate secret
+	app, err := f.appSvc.FindByName(cc.AppId)
+
+	if err != nil {
+		return err
+	}
+
+	if app.Token != cc.Secret {
+		return errors.New("invalid token")
+	}
 
 	err = client.SendWithFlags([]byte("AUTH_OK"), tcp.FLAG_MESSAGE_AUTH)
+
 
 	if err != nil {
 		return err

@@ -50,7 +50,7 @@ func main() {
 	}
 
 	addr := ":8008"
-	server, err := tcp.NewTCPServer(addr, flog.New())
+	server, err := tcp.NewTCPServer(addr, flog.New(db))
 
 	if err != nil {
 		logger.Error("rror staring server.", slog.Any("err", err))

@@ -1,11 +1,15 @@
 package apps
 
 import (
+	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"strings"
 	"time"
 )
+
+const APP_KEY_LEN = 32
 
 type App struct {
 	Id        int64     `json:"id"`
@@ -62,8 +66,35 @@ func (as *AppService) FindById(id int64) (*App, error) {
 	}, nil
 }
 
+func (as *AppService) FindByName(appName string) (*App, error) {
+	row := as.db.QueryRow("SELECT id, token, inactive, user_id, created_at FROM applications WHERE name = ?", appName)
+
+	var id int64
+	var token string
+	var inactive bool
+	var userId int64
+	var createdAt time.Time
+
+	if err := row.Scan(&id, &token, &inactive, &userId, &createdAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// TODO: customise and handle this error
+			return nil, errors.New("application not found")
+		}
+		return nil, err
+	}
+
+	return &App{
+		Id:        id,
+		Name:      appName,
+		Token:     token,
+		Inactive:  inactive,
+		UserId:    userId,
+		CreatedAt: createdAt,
+	}, nil
+}
+
 func (as *AppService) CreateApp(data AppCreateInput) (*App, error) {
-	token := "GENEREATED_TOKEN" // TODO: generate token for application
+	token, err := genKey(flog.APP_KEY_LEN)
 	name := strings.ReplaceAll(data.Name, " ", "_")
 	res, err := as.db.Exec("INSERT INTO applications (name, token, inactive, user_id) VALUES (?, ?, ?, ?) RETURNING id;", name, token, false, data.UserId)
 
@@ -176,10 +207,23 @@ func (as *AppService) ListAppMembers(appId int64) ([]App, error) {
 			Id:        id,
 			Name:      name,
 			Token:     token,
-            Inactive:  inactive.Bool,
+			Inactive:  inactive.Bool,
 			CreatedAt: createdAt,
 		})
 	}
 
 	return users, nil
+}
+
+func genKey(length int) (string, error) {
+	b := make([]byte, length)
+	_, err := rand.Read(b)
+
+	if err != nil {
+		return "", err
+	}
+
+	key := base64.URLEncoding.EncodeToString(b)
+
+	return key, nil
 }
