@@ -26,13 +26,14 @@ const (
 )
 
 type flog struct {
-	appName string
-	appId   int64
-	logFile string
-	logDir  string
-	output  *os.File
-	appSvc  *services.AppService
-	logSvc  *services.LogService
+	appName  string
+	appId    int64
+	logFile  string
+	logDir   string
+	flogHome string
+	output   *os.File
+	appSvc   *services.AppService
+	logSvc   *services.LogService
 }
 
 type ClientCredential struct {
@@ -40,10 +41,11 @@ type ClientCredential struct {
 	Secret string `json:"secret"`
 }
 
-func New(appSvc *services.AppService, logSvc *services.LogService) *flog {
+func New(appSvc *services.AppService, logSvc *services.LogService, flogHome string) *flog {
 	return &flog{
-		appSvc: appSvc,
-		logSvc: logSvc,
+		appSvc:   appSvc,
+		logSvc:   logSvc,
+		flogHome: flogHome,
 	}
 }
 
@@ -124,13 +126,7 @@ func (f *flog) Handle(client *tcp.TCPConnection) {
 		return
 	}
 
-	userDir := os.Getenv("HOME")
-
-	if os.PathSeparator == '\\' {
-		userDir = os.Getenv("USERPROFILE")
-	}
-
-	dest := filepath.Join(userDir, ".flog", "logs", f.appName)
+	dest := filepath.Join(f.flogHome, "logs", f.appName)
 
 	f.logDir = dest
 

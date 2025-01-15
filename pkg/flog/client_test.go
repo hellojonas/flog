@@ -6,11 +6,11 @@ import (
 	"testing"
 )
 
-func _TestClientSendMessage(t *testing.T) {
+func TestClientSendMessage(t *testing.T) {
 	addr := ":8008"
 	cc := ClientCredential{
-		AppId:  "flog",
-		Secret: "flog_secret_key",
+		AppId:  "debug",
+		Secret: "Ar5jZMPiuHWoim_xcXj84xurFvp5RJadUOc_Ls5FPkg=",
 	}
 
 	c, err := NewClient(addr, cc)

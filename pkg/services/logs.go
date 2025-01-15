@@ -2,6 +2,7 @@ package services
 
 import (
 	"database/sql"
+	"path/filepath"
 	"time"
 )
 
@@ -17,12 +18,18 @@ type LogCreateInput struct {
 }
 
 type LogService struct {
-	db *sql.DB
+	logDir string
+	db     *sql.DB
 }
 
-func NewLogService(db *sql.DB) *LogService {
+func (ls *LogService) ResolveLogFile(appName string, logName string) string {
+	return filepath.Join(ls.logDir, appName, logName)
+}
+
+func NewLogService(db *sql.DB, logDir string) *LogService {
 	return &LogService{
-		db: db,
+		db:     db,
+		logDir: logDir,
 	}
 }
 

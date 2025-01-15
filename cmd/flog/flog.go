@@ -23,14 +23,14 @@ func main() {
 		userDir = os.Getenv("USERPROFILE")
 	}
 
-	flogRoot := filepath.Join(userDir, ".flog")
+	flogHome := filepath.Join(userDir, ".flog")
 
-	if err := os.MkdirAll(flogRoot, fs.ModePerm); err != nil {
+	if err := os.MkdirAll(flogHome, fs.ModePerm); err != nil {
 		logger.Error("error creating flog root dir.", slog.Any("err", err))
 		panic(err)
 	}
 
-	dbpath := "file:" + filepath.Join(flogRoot, "flog.db")
+	dbpath := "file:" + filepath.Join(flogHome, "flog.db")
 
 	logger.Info("opening db...", slog.String("db", dbpath))
 	db, err := sql.Open("sqlite3", dbpath)
@@ -51,12 +51,15 @@ func main() {
 	}
 
 	addr := ":8008"
+	logDir := filepath.Join(flogHome, "logs")
 	appSvc := services.NewAppService(db)
-	logSvc := services.NewLogService(db)
-	server, err := tcp.NewTCPServer(addr, flog.New(appSvc, logSvc))
+	logSvc := services.NewLogService(db, logDir)
+
+	flogHandler := flog.New(appSvc, logSvc, flogHome)
+	server, err := tcp.NewTCPServer(addr, flogHandler)
 
 	if err != nil {
-		logger.Error("rror staring server.", slog.Any("err", err))
+		logger.Error("error staring server.", slog.Any("err", err))
 		panic(err)
 	}
 

@@ -29,6 +29,38 @@ func (ar *appRouter) Route(mux *http.ServeMux) {
 	mux.HandleFunc("POST /apps/{id}/members", ar.SetMembers)
 	mux.HandleFunc("GET /apps/{id}/members", ar.ListAppMembers)
 	mux.HandleFunc("GET /apps/{id}/logs", ar.ListAppLogs)
+	mux.HandleFunc("GET /apps/{id}/logs/{name}", ar.DowloadLog)
+}
+
+func (ar *appRouter) DowloadLog(w http.ResponseWriter, r *http.Request) {
+	aid, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+
+	if err != nil {
+		sendJson(w, http.StatusBadRequest, HttpMessageResponse{
+			Message: "invalid appId id",
+		})
+	}
+
+	logName := r.PathValue("name")
+	app, err := ar.appSvc.FindById(aid)
+
+	if err != nil {
+		sendJson(w, http.StatusBadRequest, HttpMessageResponse{
+			Message: "error retrieving app info",
+		})
+	}
+
+	logPath := ar.logSvc.ResolveLogFile(app.Name, logName)
+
+	if err != nil {
+		sendJson(w, http.StatusBadRequest, HttpMessageResponse{
+			Message: "error retrieving app logs",
+		})
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(app.Name+"_"+logName))
+	w.Header().Set("Content-Type", "application/octect-stream")
+	http.ServeFile(w, r, logPath)
 }
 
 func (ur *appRouter) CreateApp(w http.ResponseWriter, r *http.Request) {
