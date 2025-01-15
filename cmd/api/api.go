@@ -44,8 +44,10 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	logService := services.NewLogService(db)
+
 	appService := services.NewAppService(db)
-	appRouter := api.NewAppRouter(appService)
+	appRouter := api.NewAppRouter(appService, logService)
 	appRouter.Route(mux)
 
 	usrRouter := api.NewUserRouter(services.NewUserService(db), appService)

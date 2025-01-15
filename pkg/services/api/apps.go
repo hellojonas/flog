@@ -11,11 +11,13 @@ import (
 
 type appRouter struct {
 	appSvc *services.AppService
+	logSvc *services.LogService
 }
 
-func NewAppRouter(svc *services.AppService) *appRouter {
+func NewAppRouter(appSvc *services.AppService, logSvc *services.LogService) *appRouter {
 	ar := &appRouter{
-		appSvc: svc,
+		appSvc: appSvc,
+		logSvc: logSvc,
 	}
 
 	return ar
@@ -26,6 +28,7 @@ func (ar *appRouter) Route(mux *http.ServeMux) {
 	mux.HandleFunc("GET /apps/{id}", ar.RetrieveById)
 	mux.HandleFunc("POST /apps/{id}/members", ar.SetMembers)
 	mux.HandleFunc("GET /apps/{id}/members", ar.ListAppMembers)
+	mux.HandleFunc("GET /apps/{id}/logs", ar.ListAppLogs)
 }
 
 func (ur *appRouter) CreateApp(w http.ResponseWriter, r *http.Request) {
@@ -150,4 +153,27 @@ func (ur *appRouter) ListAppMembers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJson(w, http.StatusOK, apps)
+}
+
+func (ur *appRouter) ListAppLogs(w http.ResponseWriter, r *http.Request) {
+	aid, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+
+	if err != nil {
+		sendJson(w, http.StatusBadRequest, HttpMessageResponse{
+			Message: "invalid appId id",
+		})
+	}
+
+	logs, err := ur.logSvc.ListAppLogs(aid)
+
+	// TODO: improve error to tell if user was not found
+	if err != nil {
+		msg := HttpMessageResponse{
+			Message: "error retrieving app logs. " + err.Error(), // TODO: improve this, nonsense error might appear
+		}
+		sendJson(w, http.StatusBadRequest, msg)
+		return
+	}
+
+	sendJson(w, http.StatusOK, logs)
 }

@@ -61,7 +61,7 @@ func (ur *userRouter) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendJson(w, http.StatusCreated, "")
+	sendResponse(w, http.StatusCreated)
 }
 
 func (ur *userRouter) RetrieveById(w http.ResponseWriter, r *http.Request) {
