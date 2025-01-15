@@ -1,21 +1,19 @@
-package apps
+package api
 
 import (
 	"encoding/json"
 	"io"
 	"net/http"
 	"strconv"
+
+	"github.com/hellojonas/flog/pkg/services"
 )
 
 type appRouter struct {
-	appSvc *AppService
+	appSvc *services.AppService
 }
 
-type HttpMessageResponse struct {
-	Message string `json:"message"`
-}
-
-func NewRouter(svc *AppService) *appRouter {
+func NewAppRouter(svc *services.AppService) *appRouter {
 	ar := &appRouter{
 		appSvc: svc,
 	}
@@ -31,7 +29,7 @@ func (ar *appRouter) Route(mux *http.ServeMux) {
 }
 
 func (ur *appRouter) CreateApp(w http.ResponseWriter, r *http.Request) {
-	var appInput AppCreateInput
+	var appInput services.AppCreateInput
 	body, err := io.ReadAll(r.Body)
 
 	if err != nil {
@@ -97,7 +95,7 @@ func (ur *appRouter) SetMembers(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	var appMemberInput AppMemberInput
+	var appMemberInput services.AppMemberInput
 	body, err := io.ReadAll(r.Body)
 
 	if err != nil {
@@ -128,7 +126,7 @@ func (ur *appRouter) SetMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendJson(w, http.StatusOK, "")
+	sendResponse(w, http.StatusOK)
 }
 
 func (ur *appRouter) ListAppMembers(w http.ResponseWriter, r *http.Request) {
@@ -152,17 +150,4 @@ func (ur *appRouter) ListAppMembers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJson(w, http.StatusOK, apps)
-}
-
-func sendJson(w http.ResponseWriter, status int, body interface{}) error {
-	w.Header().Add("Content-type", "application/json")
-	data, err := json.Marshal(body)
-
-	if err != nil {
-		return err
-	}
-
-	w.WriteHeader(status)
-	w.Write(data)
-	return nil
 }

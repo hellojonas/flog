@@ -1,4 +1,4 @@
-package users
+package api
 
 import (
 	"encoding/json"
@@ -6,19 +6,15 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/hellojonas/flog/pkg/apps"
+	"github.com/hellojonas/flog/pkg/services"
 )
 
 type userRouter struct {
-	svc    *UserService
-	appSvc *apps.AppService
+	svc    *services.UserService
+	appSvc *services.AppService
 }
 
-type HttpMessageResponse struct {
-	Message string `json:"message"`
-}
-
-func NewRouter(svc *UserService, appSvc *apps.AppService) *userRouter {
+func NewUserRouter(svc *services.UserService, appSvc *services.AppService) *userRouter {
 	ur := &userRouter{
 		svc:    svc,
 		appSvc: appSvc,
@@ -34,7 +30,7 @@ func (ur *userRouter) Route(mux *http.ServeMux) {
 }
 
 func (ur *userRouter) Signup(w http.ResponseWriter, r *http.Request) {
-	var usrInput UserCreateInput
+	var usrInput services.UserCreateInput
 	body, err := io.ReadAll(r.Body)
 
 	if err != nil {
@@ -113,17 +109,4 @@ func (ur *userRouter) ListUserApps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJson(w, http.StatusOK, apps)
-}
-
-func sendJson(w http.ResponseWriter, status int, body interface{}) error {
-	w.Header().Add("Content-type", "application/json")
-	data, err := json.Marshal(body)
-
-	if err != nil {
-		return err
-	}
-
-	w.WriteHeader(status)
-	w.Write(data)
-	return nil
 }

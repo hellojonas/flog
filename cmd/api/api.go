@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 
 	"github.com/hellojonas/flog/pkg/applog"
-	"github.com/hellojonas/flog/pkg/apps"
-	"github.com/hellojonas/flog/pkg/users"
+	"github.com/hellojonas/flog/pkg/services"
+	"github.com/hellojonas/flog/pkg/services/api"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -44,11 +44,11 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	appService := apps.NewService(db)
-	appRouter := apps.NewRouter(appService)
+	appService := services.NewAppService(db)
+	appRouter := api.NewAppRouter(appService)
 	appRouter.Route(mux)
 
-	usrRouter := users.NewRouter(users.NewService(db), appService)
+	usrRouter := api.NewUserRouter(services.NewUserService(db), appService)
 	usrRouter.Route(mux)
 
 	err = http.ListenAndServe(addr, mux)

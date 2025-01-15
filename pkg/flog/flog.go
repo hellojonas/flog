@@ -12,8 +12,7 @@ import (
 	"time"
 
 	"github.com/hellojonas/flog/pkg/applog"
-	"github.com/hellojonas/flog/pkg/apps"
-	"github.com/hellojonas/flog/pkg/logs"
+	"github.com/hellojonas/flog/pkg/services"
 	"github.com/hellojonas/flog/pkg/tcp"
 )
 
@@ -32,8 +31,8 @@ type flog struct {
 	logFile string
 	logDir  string
 	output  *os.File
-	appSvc  *apps.AppService
-	logSvc  *logs.LogService
+	appSvc  *services.AppService
+	logSvc  *services.LogService
 }
 
 type ClientCredential struct {
@@ -41,7 +40,7 @@ type ClientCredential struct {
 	Secret string `json:"secret"`
 }
 
-func New(appSvc *apps.AppService, logSvc *logs.LogService) *flog {
+func New(appSvc *services.AppService, logSvc *services.LogService) *flog {
 	return &flog{
 		appSvc: appSvc,
 		logSvc: logSvc,
@@ -175,7 +174,7 @@ func (f *flog) persist(data []byte) error {
 		f.output.Close()
 		f.output = out
 
-		err = f.logSvc.CreateLog(logs.LogCreateInput{
+		err = f.logSvc.CreateLog(services.LogCreateInput{
 			Name:  filename,
 			AppId: f.appId,
 		})

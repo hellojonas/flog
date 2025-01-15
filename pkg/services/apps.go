@@ -1,4 +1,4 @@
-package apps
+package services
 
 import (
 	"crypto/rand"
@@ -33,7 +33,7 @@ type AppService struct {
 	db *sql.DB
 }
 
-func NewService(db *sql.DB) *AppService {
+func NewAppService(db *sql.DB) *AppService {
 	return &AppService{
 		db: db,
 	}
@@ -116,21 +116,44 @@ func (as *AppService) CreateApp(data AppCreateInput) (*App, error) {
 }
 
 func (as *AppService) SetMembers(app int64, members []int64) error {
-	appMember := make([]string, len(members))
-	for i := range members {
+	_users, err := as.ListAppMembers(app)
+
+	if err != nil {
+		return err
+	}
+
+	existing := make(map[int64]bool)
+	for _, u := range _users {
+		existing[u.Id] = true
+	}
+
+	newMembers := make([]int64, 0)
+	for _, m := range members {
+		if existing[m] {
+			continue
+		}
+		newMembers = append(newMembers, m)
+	}
+
+	if len(newMembers) == 0 {
+		return nil
+	}
+
+	appMember := make([]string, len(newMembers))
+	for i := range newMembers {
 		appMember[i] = "(?, ?)"
 	}
 	values := strings.Join(appMember, ",")
 
-	args := make([]any, len(members)*2)
-	for i := 0; i < len(members); i += 2 {
-		args[i] = members[i]
+	args := make([]any, len(newMembers)*2)
+	for i := 0; i < len(newMembers); i += 2 {
+		args[i] = newMembers[i]
 		args[i+1] = app
 	}
 
 	query := "INSERT INTO user_applications (user_id, application_id) values " + values + ";"
 
-	_, err := as.db.Exec(query, args...)
+	_, err = as.db.Exec(query, args...)
 
 	if err != nil {
 		return err
@@ -139,45 +162,7 @@ func (as *AppService) SetMembers(app int64, members []int64) error {
 	return nil
 }
 
-func (as *AppService) ListUserApps(userId int64) ([]App, error) {
-	query := ` SELECT a.id, a.name, a.token, a.inactive, a.created_at
-    FROM user_applications ua
-    INNER JOIN users u on u.id = ua.user_id
-    INNER JOIN applications a on a.id = ua.application_id
-    WHERE ua.user_id = ?;
-    `
-
-	rows, err := as.db.Query(query, userId)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var id int64
-	var name string
-	var token string
-	var inactive bool
-	var createdAt time.Time
-
-	var apps []App
-	for rows.Next() {
-		err := rows.Scan(&id, &name, &token, &inactive, &createdAt)
-		if err != nil {
-			return nil, err
-		}
-		apps = append(apps, App{
-			Id:        id,
-			Name:      name,
-			Token:     token,
-			Inactive:  inactive,
-			CreatedAt: createdAt,
-		})
-	}
-
-	return apps, nil
-}
-
-func (as *AppService) ListAppMembers(appId int64) ([]App, error) {
+func (as *AppService) ListAppMembers(appId int64) ([]User, error) {
 	query := ` SELECT u.id, u.name, u.email, u.inactive, u.created_at
     FROM user_applications ua
     INNER JOIN users u on u.id = ua.user_id
@@ -193,26 +178,64 @@ func (as *AppService) ListAppMembers(appId int64) ([]App, error) {
 
 	var id int64
 	var name string
-	var token string
+	var email string
 	var inactive sql.NullBool
 	var createdAt time.Time
 
-	var users []App
+	var _users []User
 	for rows.Next() {
-		err := rows.Scan(&id, &name, &token, &inactive, &createdAt)
+		err := rows.Scan(&id, &name, &email, &inactive, &createdAt)
 		if err != nil {
 			return nil, err
 		}
-		users = append(users, App{
+		_users = append(_users, User{
 			Id:        id,
 			Name:      name,
-			Token:     token,
+			Email:     email,
 			Inactive:  inactive.Bool,
 			CreatedAt: createdAt,
 		})
 	}
 
-	return users, nil
+	return _users, nil
+}
+
+func (us *AppService) ListUserApps(userId int64) ([]App, error) {
+	query := ` SELECT a.id, a.name, a.token, a.inactive, a.created_at
+    FROM user_applications ua
+    INNER JOIN users u on u.id = ua.user_id
+    INNER JOIN applications a on a.id = ua.application_id
+    WHERE ua.user_id = ?;
+    `
+
+	rows, err := us.db.Query(query, userId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var id int64
+	var name string
+	var token string
+	var inactive bool
+	var createdAt time.Time
+
+	var _apps []App
+	for rows.Next() {
+		err := rows.Scan(&id, &name, &token, &inactive, &createdAt)
+		if err != nil {
+			return nil, err
+		}
+		_apps = append(_apps, App{
+			Id:        id,
+			Name:      name,
+			Token:     token,
+			Inactive:  inactive,
+			CreatedAt: createdAt,
+		})
+	}
+
+	return _apps, nil
 }
 
 func genKey(length int) (string, error) {

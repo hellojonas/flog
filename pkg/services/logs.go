@@ -1,4 +1,4 @@
-package logs
+package services
 
 import (
 	"database/sql"
@@ -20,7 +20,7 @@ type LogService struct {
 	db *sql.DB
 }
 
-func NewService(db *sql.DB) *LogService {
+func NewLogService(db *sql.DB) *LogService {
 	return &LogService{
 		db: db,
 	}
