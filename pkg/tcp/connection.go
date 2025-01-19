@@ -106,7 +106,7 @@ func (c *TCPConnection) SendWithFlags(data []uint8, flags TCPMessageFlag) error 
 
 		if i == parts-1 {
 			msgFlags |= FLAG_MESSAGE_END
-			end = start + len(data[start:])
+			end = start + len(data[start:]) // TODO: review
 		}
 
 		msg := TCPMessage{

@@ -37,7 +37,7 @@ type flog struct {
 }
 
 type ClientCredential struct {
-	AppId  string `json:"app_id"`
+	AppId  string `json:"appId"`
 	Secret string `json:"secret"`
 }
 
